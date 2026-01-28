@@ -1,0 +1,346 @@
+Build a Professional Polymarket Live Event Tracker
+Project Overview
+Build a modern, professional web application that tracks Polymarket betting positions alongside real-world live data (crypto prices, weather, sports scores, stock prices). This is a SaaS platform for Polymarket traders to monitor their bets with real-time event tracking.
+Tech Stack
+
+Frontend: React with TypeScript
+Styling: Tailwind CSS + shadcn/ui components
+APIs:
+
+CoinGecko API (crypto prices - free)
+Open-Meteo API (weather - free, no key)
+Yahoo Finance or Finnhub (stocks - free)
+API-SPORTS (sports scores - free tier)
+
+
+State Management: React hooks (useState, useEffect)
+Data Fetching: Native fetch API with error handling
+
+Design Requirements
+Visual Style
+
+Modern, clean, professional SaaS aesthetic
+Dark mode primary (dark navy/purple gradient backgrounds)
+Glassmorphism cards with subtle blur effects
+Smooth animations and transitions
+Premium feel - think Stripe, Linear, or Vercel design quality
+Color palette:
+
+Background: Dark gradient (slate-900 to purple-900)
+Cards: Semi-transparent dark with border glow
+Accent: Purple/blue gradients
+Success: Green-400
+Danger: Red-400
+Info: Blue-400
+
+
+
+Layout Structure
+┌─────────────────────────────────────────┐
+│  Header (Logo, Nav, User Menu)          │
+├─────────────────────────────────────────┤
+│  Stats Dashboard (4 cards)              │
+│  [Active Bets] [Invested] [P&L] [Win%]  │
+├─────────────────────────────────────────┤
+│  Tabs: [Active Bets] [History]          │
+├─────────────────────────────────────────┤
+│  ┌───────────────────────────────────┐  │
+│  │ Bet Card 1                        │  │
+│  │  - Market title                   │  │
+│  │  - Live data visualization        │  │
+│  │  - Progress bar to threshold      │  │
+│  │  - Real-time status indicators    │  │
+│  └───────────────────────────────────┘  │
+│  ┌───────────────────────────────────┐  │
+│  │ Bet Card 2                        │  │
+│  └───────────────────────────────────┘  │
+└─────────────────────────────────────────┘
+Key Features to Implement
+1. Dashboard Overview
+
+4 stat cards showing:
+
+Total active positions
+Total amount invested
+Unrealized P&L (green/red)
+Overall win rate percentage
+
+
+Each card should have subtle hover effects
+Animate numbers on load
+
+2. Live Bet Tracking Cards
+Each bet card should display:
+Header Section:
+
+Market title (clear, bold)
+Position badge (YES/NO with color coding)
+Category tag (Crypto, Weather, Sports, Stocks)
+Live indicator (pulsing dot + "LIVE" text)
+
+Real-Time Data Section (Most Important):
+
+Large display of current real-world value
+Threshold value display
+Distance to threshold (percentage + visual indicator)
+Progress bar showing proximity to threshold
+24h change indicator (for crypto/stocks)
+Status badge: "WINNING" (green) or "LOSING" (red)
+
+Visual Elements:
+
+Mini chart or sparkline showing recent price movement (optional but nice)
+Color-coded border that changes based on winning/losing status
+Gradient background that intensifies when close to threshold
+
+Position Details:
+
+Amount invested
+Number of shares
+Current position value
+Maximum potential payout
+Unrealized P&L (with +/- prefix)
+
+Footer:
+
+Resolution date with countdown timer
+Data source attribution
+Last updated timestamp
+Refresh button (individual card)
+
+3. Real-Time Updates
+
+Auto-refresh every 60 seconds
+Loading skeleton screens (not just spinners)
+Smooth transitions when data updates
+Toast notifications for significant changes
+Manual refresh button at top
+"Last updated X seconds ago" indicator
+
+4. Interactive Elements
+
+Hover effects on all cards
+Click to expand card for more details
+Filter/sort options (by category, P&L, status)
+Search bar to find specific bets
+Tab switching with smooth animations
+
+5. Empty States & Loading
+
+Beautiful empty state when no bets
+Skeleton loaders for initial data fetch
+Error states with retry buttons
+API connection status indicators
+
+Component Structure
+src/
+├── components/
+│   ├── Dashboard/
+│   │   ├── StatCard.tsx
+│   │   ├── StatsOverview.tsx
+│   │   └── index.tsx
+│   ├── BetCard/
+│   │   ├── BetCard.tsx
+│   │   ├── LiveDataDisplay.tsx
+│   │   ├── ProgressBar.tsx
+│   │   └── StatusBadge.tsx
+│   ├── Header/
+│   │   ├── Header.tsx
+│   │   └── RefreshButton.tsx
+│   ├── Common/
+│   │   ├── LoadingState.tsx
+│   │   ├── ErrorState.tsx
+│   │   └── EmptyState.tsx
+│   └── Layout/
+│       └── MainLayout.tsx
+├── hooks/
+│   ├── useRealTimeData.ts
+│   ├── useBetCalculations.ts
+│   └── useAutoRefresh.ts
+├── services/
+│   ├── api/
+│   │   ├── coinGecko.ts
+│   │   ├── openMeteo.ts
+│   │   ├── stocks.ts
+│   │   └── sports.ts
+│   └── calculations.ts
+├── types/
+│   ├── bet.types.ts
+│   └── api.types.ts
+└── App.tsx
+Specific UI Components Needed
+Stat Card Component
+tsx<StatCard
+  title="Unrealized P&L"
+  value="$145.50"
+  trend="+12.5%"
+  icon={<TrendingUp />}
+  variant="success" // success | danger | info
+/>
+Bet Card Component
+tsx<BetCard
+  market="Will Bitcoin hit $110k before Feb 1?"
+  position="NO"
+  category="Crypto"
+  liveValue={104250}
+  threshold={110000}
+  distance={-5.2}
+  status="winning"
+  invested={200}
+  currentValue={256}
+  pnl={56}
+  resolveDate="Feb 1, 2025"
+  dataSource="CoinGecko"
+  lastUpdate={new Date()}
+  change24h={-2.3}
+/>
+```
+
+#### **Progress Bar to Threshold**
+Visual bar showing how close current value is to threshold:
+```
+[====●--------] 45% to target
+
+Green section = distance covered
+Gray section = distance remaining
+Animated dot at current position
+
+API Integration Requirements
+Data Fetching Strategy
+typescript// Fetch all data sources in parallel
+const fetchLiveData = async () => {
+  const [crypto, weather, stocks, sports] = await Promise.allSettled([
+    fetchCryptoData(),
+    fetchWeatherData(),
+    fetchStockData(),
+    fetchSportsData()
+  ]);
+  
+  // Handle partial failures gracefully
+  // Update only successful fetches
+  // Show error states for failed APIs
+};
+Error Handling
+
+Retry failed API calls with exponential backoff
+Show which APIs are down with status indicators
+Cache last successful data
+Graceful degradation (show stale data with warning)
+
+Rate Limiting
+
+Respect free tier limits
+Cache responses for 1 minute
+Batch requests when possible
+Show API quota usage (optional)
+
+Responsive Design
+
+Mobile-first approach
+Breakpoints:
+
+Mobile: < 768px (single column)
+Tablet: 768px - 1024px (2 columns)
+Desktop: > 1024px (3 columns for stats, 2 for bet cards)
+
+
+Touch-friendly buttons and cards
+Collapsible sections on mobile
+
+Animations & Micro-interactions
+
+Fade in cards on load
+Number count-up animations for stats
+Pulse animation for "LIVE" indicators
+Smooth color transitions when status changes
+Skeleton loaders with shimmer effect
+Toast notifications slide in from top-right
+Hover scale effect on cards (scale: 1.02)
+
+Accessibility
+
+Semantic HTML
+ARIA labels for all interactive elements
+Keyboard navigation support
+Color contrast ratio > 4.5:1
+Screen reader friendly
+Focus indicators on all focusable elements
+
+Performance Optimizations
+
+Lazy load components
+Memoize expensive calculations
+Debounce API calls
+Virtual scrolling for long lists (if >20 bets)
+Optimize re-renders with React.memo
+Code splitting by route
+
+Sample Data Structure
+typescriptinterface Bet {
+  id: string;
+  market: string;
+  type: 'crypto' | 'weather' | 'sports' | 'stocks';
+  position: 'YES' | 'NO';
+  amount: number;
+  shares: number;
+  currentOdds: number;
+  entryOdds: number;
+  threshold: number;
+  resolveDate: string;
+  category: string;
+  dataSource: string;
+}
+
+interface LiveData {
+  crypto: {
+    btc: { price: number; change24h: number };
+    eth: { price: number; change24h: number };
+  };
+  weather: {
+    temp: number;
+    humidity: number;
+    windSpeed: number;
+  };
+  lastUpdate: Date;
+}
+Color Coding Rules
+
+Winning Position: Green-400 (#4ade80)
+Losing Position: Red-400 (#f87171)
+Neutral/Loading: Gray-400 (#9ca3af)
+Position YES: Green-500/20 background
+Position NO: Red-500/20 background
+Category Tags: Purple-500/20 background
+
+Must-Have UI Elements
+
+✅ Pulsing "LIVE DATA" indicator
+✅ Countdown timer to resolution
+✅ Big, readable numbers for current values
+✅ Clear visual hierarchy (most important info largest)
+✅ Status badges that are immediately understood
+✅ Percentage distance display with +/- and color
+✅ Data source attribution (small text)
+✅ Last updated timestamp
+✅ Refresh button with loading state
+✅ Error boundaries with friendly messages
+
+Testing Checklist
+
+ API failures handled gracefully
+ Data updates smoothly without flicker
+ Mobile responsive on all screen sizes
+ Loading states work correctly
+ Empty states display properly
+ Numbers format correctly (commas, decimals)
+ Colors update when status changes
+ Animations are smooth (60fps)
+ Accessible via keyboard
+ Works in Chrome, Firefox, Safari
+
+Deployment
+
+Build optimized production bundle
+Environment variables for API keys (if needed)
+Error logging (console errors in production)
+Analytics tracking (optional)

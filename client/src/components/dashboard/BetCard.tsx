@@ -1,0 +1,218 @@
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { RefreshCw, TrendingUp, TrendingDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Bet, LiveData } from "@/lib/mockData";
+import { format } from "date-fns";
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+
+interface BetCardProps {
+  bet: Bet;
+  liveData?: LiveData;
+  onRefresh: () => void;
+  isRefreshing: boolean;
+  index?: number;
+}
+
+export function BetCard({ bet, liveData, onRefresh, isRefreshing, index = 0 }: BetCardProps) {
+  const [percentToTarget, setPercentToTarget] = useState(0);
+  const [distanceInfo, setDistanceInfo] = useState({ label: '', color: '' });
+
+  const isWinning = bet.status === 'winning';
+  const isLosing = bet.status === 'losing';
+
+  // Calculate progress relative to threshold
+  useEffect(() => {
+    if (!liveData) return;
+    
+    // Normalize logic for progress bar
+    const range = bet.threshold * 0.2 || 10;
+    const start = bet.threshold - range;
+    const end = bet.threshold + range;
+    
+    let pct = ((liveData.value - start) / (end - start)) * 100;
+    pct = Math.min(Math.max(pct, 0), 100);
+    
+    setPercentToTarget(pct);
+
+    // Calculate distance text
+    const diff = liveData.value - bet.threshold;
+    const percentDiff = (diff / bet.threshold) * 100;
+    
+    if (bet.type === 'crypto' || bet.type === 'stocks') {
+       const isAbove = diff > 0;
+       setDistanceInfo({
+         label: `${isAbove ? '+' : ''}${percentDiff.toFixed(2)}% ${isAbove ? 'above' : 'below'} target`,
+         color: isAbove === (bet.position === 'YES') ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+       });
+    } else {
+       setDistanceInfo({
+         label: `${Math.abs(diff).toFixed(1)} units away`,
+         color: 'text-muted-foreground'
+       });
+    }
+
+  }, [liveData, bet.threshold, bet.position, bet.type]);
+
+  
+  // Format numbers
+  const formatCurrency = (val: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
+  const formatNumber = (val: number) => new Intl.NumberFormat('en-US').format(val);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: index * 0.1 }}
+    >
+      <Card className={cn(
+        "glass-card border-l-4 transition-all duration-300",
+        isWinning ? "border-l-emerald-500" : 
+        isLosing ? "border-l-rose-500" : 
+        "border-l-slate-400 dark:border-l-slate-600"
+      )}>
+        <CardHeader className="pb-3">
+          <div className="flex justify-between items-start gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 mb-2">
+                <Badge variant="outline" className={cn(
+                  "uppercase text-[10px] tracking-wider font-bold border-0 bg-opacity-10",
+                  bet.category === 'Crypto' ? "text-orange-600 dark:text-orange-300 bg-orange-500/10" :
+                  bet.category === 'Weather' ? "text-blue-600 dark:text-blue-300 bg-blue-500/10" :
+                  bet.category === 'Stocks' ? "text-purple-600 dark:text-purple-300 bg-purple-500/10" :
+                  "text-emerald-600 dark:text-emerald-300 bg-emerald-500/10"
+                )}>
+                  {bet.category}
+                </Badge>
+                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-pulse absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-600 dark:bg-red-500"></span>
+                  </span>
+                  <span className="text-[10px] font-bold text-red-600 dark:text-red-400 tracking-wider">LIVE</span>
+                </div>
+              </div>
+              <CardTitle className="text-base font-semibold leading-tight text-foreground">
+                {bet.market}
+              </CardTitle>
+            </div>
+            
+            <Badge className={cn(
+              "text-sm font-bold px-3 py-1 border-0 shadow-none",
+              bet.position === 'YES' ? "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400" : "bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-400"
+            )}>
+              {bet.position}
+            </Badge>
+          </div>
+        </CardHeader>
+        
+        <CardContent>
+          {/* Main Live Data Display */}
+          <div className="mb-6 relative group">
+            <div className="flex items-baseline gap-3">
+              <span className={cn(
+                "text-4xl font-bold tracking-tight transition-all duration-300",
+                 // Cleaner colors, removed text-glow
+                 isWinning ? "text-emerald-600 dark:text-emerald-400" : isLosing ? "text-rose-600 dark:text-rose-400" : "text-foreground"
+              )}>
+                {liveData?.value !== undefined 
+                  ? bet.type === 'crypto' || bet.type === 'stocks' ? `$${formatNumber(liveData.value)}` : liveData.value.toFixed(1) 
+                  : "..."}
+              </span>
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Current</span>
+            </div>
+            
+            <div className="flex items-center gap-4 mt-2 text-sm bg-secondary/50 p-2 rounded-lg w-fit">
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground text-xs uppercase font-bold">Target</span>
+                <span className="font-semibold text-foreground">
+                  {bet.type === 'crypto' || bet.type === 'stocks' ? `$${formatNumber(bet.threshold)}` : bet.threshold}
+                </span>
+              </div>
+              <div className="h-3 w-px bg-border" />
+              {liveData?.change24h && (
+                <div className={cn(
+                  "flex items-center gap-1 text-xs font-medium",
+                  liveData.change24h > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+                )}>
+                  {liveData.change24h > 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                  {Math.abs(liveData.change24h).toFixed(2)}% (24h)
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Progress Bar */}
+          <div className="mb-6 space-y-2">
+            <div className="flex justify-between text-xs items-center">
+              <span className="text-muted-foreground font-medium">Proximity</span>
+              <span className={cn("font-bold", distanceInfo.color)}>
+                {distanceInfo.label}
+              </span>
+            </div>
+            <div className="relative h-3 w-full bg-secondary rounded-full overflow-hidden border border-border/50">
+              {/* Background markers */}
+              <div className="absolute inset-0 flex justify-between px-2">
+                   <div className="w-px h-full bg-border" />
+                   <div className="w-px h-full bg-border" />
+                   <div className="w-px h-full bg-border" />
+              </div>
+
+              <div 
+                className={cn(
+                    "absolute top-0 bottom-0 left-0 transition-all duration-1000 ease-out",
+                    isWinning ? "bg-emerald-500" : "bg-rose-500"
+                )}
+                style={{ width: `${percentToTarget}%` }}
+              />
+              {/* Threshold Marker */}
+              <div className="absolute top-0 bottom-0 w-0.5 bg-foreground/30 left-1/2 z-10"></div>
+            </div>
+            <div className="flex justify-between text-[10px] text-muted-foreground font-medium px-1">
+               <span>Low</span>
+               <span className="text-foreground/70 font-bold">Target</span>
+               <span>High</span>
+            </div>
+          </div>
+
+          {/* Footer Stats */}
+          <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
+            <div className="bg-secondary/30 rounded-lg p-2">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5 font-semibold">Unrealized P&L</p>
+              <p className={cn(
+                "text-sm font-bold",
+                bet.pnl > 0 ? "text-emerald-600 dark:text-emerald-400" : bet.pnl < 0 ? "text-rose-600 dark:text-rose-400" : "text-muted-foreground"
+              )}>
+                {bet.pnl > 0 ? '+' : ''}{formatCurrency(bet.pnl)}
+              </p>
+            </div>
+            <div className="bg-secondary/30 rounded-lg p-2 text-right">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5 font-semibold">Resolution</p>
+              <p className="text-sm font-medium text-foreground">
+                {format(new Date(bet.resolveDate), 'MMM d')}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4 flex items-center justify-between pt-1 text-[10px] text-muted-foreground">
+            <div className="flex items-center gap-1.5">
+              <div className="h-1.5 w-1.5 rounded-full bg-emerald-500"></div>
+              <span>Source: {bet.dataSource}</span>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-6 w-6 p-0 hover:bg-secondary rounded-full"
+              onClick={onRefresh}
+              disabled={isRefreshing}
+            >
+              <RefreshCw className={cn("h-3 w-3", isRefreshing && "animate-spin")} />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}

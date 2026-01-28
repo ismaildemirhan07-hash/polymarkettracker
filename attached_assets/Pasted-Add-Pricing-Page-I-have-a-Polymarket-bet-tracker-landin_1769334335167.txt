@@ -1,0 +1,100 @@
+Add Pricing Page
+I have a Polymarket bet tracker landing page with Dashboard, History, and Analytics tabs.
+
+I need you to add a new "Pricing" tab with a clean, modern pricing page.
+
+## What to Add:
+
+### 1. New Tab
+Add "Pricing" tab next to Dashboard, History, Analytics tabs
+
+### 2. Pricing Cards (3 tiers)
+
+**FREE Tier:**
+- $0/month
+- Track 3 bets
+- 5-minute updates
+- Basic crypto/weather/stocks
+- Email alerts (2/day)
+
+**PRO Tier:** (highlight as "Most Popular")
+- $19/month
+- Unlimited bets
+- 60-second updates
+- All crypto/stocks/weather
+- Push notifications
+- SMS alerts
+- Analytics
+
+**PREMIUM Tier:**
+- $49/month
+- Everything in Pro
+- 15-second updates
+- API access
+- Advanced analytics
+- Priority support
+
+### 3. Design Requirements:
+
+**Cards should have:**
+- Price at top (large, bold)
+- "per month" text
+- Feature list with checkmarks
+- "Get Started" button (purple/blue)
+- Hover effect (slight lift/glow)
+- "Most Popular" badge on Pro tier
+
+**Layout:**
+- 3 cards side-by-side on desktop
+- Stack vertically on mobile
+- Glassmorphism style (semi-transparent, blurred background)
+- Dark theme matching existing design
+
+### 4. FAQ Section (below pricing cards)
+
+Add collapsible FAQ with these questions:
+
+**Q: Can I cancel anytime?**
+A: Yes, cancel anytime. No commitment.
+
+**Q: What payment methods do you accept?**
+A: Credit card, crypto (USDC, ETH).
+
+**Q: Do you offer refunds?**
+A: 7-day money-back guarantee.
+
+**Q: Can I upgrade/downgrade?**
+A: Yes, anytime. Pro-rated billing.
+
+**Q: Is my data private?**
+A: We never sell your data. Ever.
+
+Make FAQ items clickable to expand/collapse.
+
+### 5. Special Offer Banner (top of page)
+
+Add banner above pricing cards:
+"🔥 Launch Special: 50% off Pro for first 100 users - Code: LAUNCH50"
+Make it dismissible with X button.
+
+## Technical Requirements:
+
+- Use same tech stack as existing pages (React + Tailwind)
+- Maintain consistent styling with Dashboard/History/Analytics
+- Mobile responsive
+- Smooth animations on hover
+- Match color scheme (purple/blue gradients)
+
+## Layout Structure:
+┌─────────────────────────────────────┐
+│  [Special Offer Banner - dismissible] │
+├─────────────────────────────────────┤
+│  Pricing heading + subtitle         │
+├─────────────────────────────────────┤
+│  [FREE]  [PRO ⭐]  [PREMIUM]        │
+│  Card    Card      Card              │
+├─────────────────────────────────────┤
+│  FAQ Section (collapsible)          │
+└─────────────────────────────────────┘
+
+Keep it simple, clean, and professional. Similar to Stripe or Vercel pricing pages.

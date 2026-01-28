@@ -1,0 +1,107 @@
+Add a "How It Works" section to the landing page, positioned AFTER the hero section and BEFORE the pricing section.
+
+## Design Requirements:
+
+### Layout
+- Full-width section with dark background (matching existing design)
+- Centered heading: "How It Works" (large, gradient text)
+- Subtitle: "Track your Polymarket bets with real-world data in 3 simple steps"
+- 3 steps displayed horizontally on desktop, stacked on mobile
+
+### Step Cards (3 cards)
+
+**Step 1: Add Your Bets**
+- Icon: Plus icon or clipboard icon
+- Number badge: "1" (large, in circle)
+- Title: "Add Your Bets"
+- Description: "Enter your Polymarket positions manually or connect your wallet. We automatically detect the bet type (crypto, weather, stocks, sports)."
+- Visual: Simple illustration or icon
+
+**Step 2: We Track Real-World Data**
+- Icon: Activity/chart icon or radar icon
+- Number badge: "2"
+- Title: "We Track Real-World Events"
+- Description: "Our system monitors live prices, weather conditions, sports scores, and stock movements from reliable APIs. Updates every 60 seconds."
+- Visual: Simple illustration or icon
+
+**Step 3: Get Instant Insights**
+- Icon: Bell or alert icon
+- Number badge: "3"
+- Title: "Get Instant Insights"
+- Description: "See win/loss status, distance to threshold, and P&L in real-time. Get alerts when conditions change or you're close to winning."
+- Visual: Simple illustration or icon
+
+### Styling
+
+**Each card should have:**
+- Glassmorphism effect (semi-transparent background with blur)
+- Border with subtle glow
+- Padding: generous (p-8)
+- Hover effect: slight lift and increased glow
+- Icon at top (60x60px, colored purple/blue gradient)
+- Number badge (large circle, top-right or top-left corner)
+- Title (text-xl, bold, white)
+- Description (text-gray-400, leading relaxed)
+
+**Overall section:**
+- Background: Dark gradient (slate-900 to purple-900/20)
+- Padding: py-20 (desktop), py-12 (mobile)
+- Max width: container (max-w-7xl)
+
+### Optional: Visual Flow
+
+Add arrows between cards on desktop (→ arrows) showing the flow:
+```
+[Step 1] → [Step 2] → [Step 3]
+```
+
+### Code Structure:
+```jsx
+<section className="py-20 bg-gradient-to-b from-slate-900 to-purple-900/20">
+  <div className="max-w-7xl mx-auto px-6">
+    {/* Heading */}
+    <div className="text-center mb-16">
+      <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+        How It Works
+      </h2>
+      <p className="text-gray-400 text-lg">
+        Track your Polymarket bets with real-world data in 3 simple steps
+      </p>
+    </div>
+
+    {/* Steps */}
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      {/* Step 1 Card */}
+      {/* Step 2 Card */}
+      {/* Step 3 Card */}
+    </div>
+  </div>
+</section>
+```
+
+### Icons to use:
+- Use Lucide React icons (already in project)
+- Step 1: `Plus`, `ClipboardList`, or `Edit`
+- Step 2: `Activity`, `TrendingUp`, or `BarChart3`
+- Step 3: `Bell`, `CheckCircle`, or `Zap`
+
+### Responsive Design:
+- Desktop (md and up): 3 columns, horizontal layout
+- Tablet (sm to md): 2 columns, then 1 on last row
+- Mobile (below sm): Single column, stacked vertically
+- Arrows only visible on desktop (hidden on mobile)
+
+### Animation (optional but nice):
+- Fade in cards on scroll (stagger effect)
+- Cards appear one by one with slight delay
+- Use simple CSS transitions or Framer Motion if available
+
+### Position in page:
+Place this section:
+1. After hero/header section
+2. Before pricing section
+3. Before FAQ section
+
+The section should naturally flow with existing design and feel cohesive with the dark theme, purple/blue gradients, and glassmorphism style used throughout the landing page.
+
+Keep it simple, clean, and easy to understand. Users should immediately grasp the value proposition.
