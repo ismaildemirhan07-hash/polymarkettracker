@@ -148,12 +148,13 @@ export class WalletSyncService {
             updatedAt: new Date()
           };
           
-          // If threshold is 0 and it's a Bitcoin Up/Down bet, set it now
-          if (existingBet.threshold === 0) {
+          // If threshold is 0/null and it's a Bitcoin Up/Down bet, set it now
+          if (!existingBet.threshold || existingBet.threshold === 0) {
             const threshold = await this.getThresholdForBet(position.title);
             if (threshold > 0) {
               updateData.threshold = threshold;
               updateData.thresholdUnit = 'USD';
+              logger.info(`Setting threshold for existing bet: ${position.title} = ${threshold}`);
             }
           }
           
