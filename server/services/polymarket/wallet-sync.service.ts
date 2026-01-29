@@ -65,21 +65,41 @@ export class WalletSyncService {
   }
 
   /**
-   * Get threshold (starting price) for Bitcoin Up/Down bets
+   * Get threshold (starting price) for Crypto Up/Down bets
    */
   private static async getThresholdForBet(title: string): Promise<number> {
-    // Check if it's a Bitcoin Up/Down bet
-    if (!title.toLowerCase().includes('bitcoin') || !title.toLowerCase().includes('up or down')) {
-      return 0; // Not a time-based Bitcoin bet
+    // Extract crypto symbol from title (works for any crypto)
+    // Pattern: "[Crypto Name] Up or Down" or "[Symbol] Up or Down"
+    const upOrDownMatch = title.match(/^([A-Za-z0-9]+)\s+Up\s+or\s+Down/i);
+    if (!upOrDownMatch) {
+      return 0; // Not an Up/Down bet
     }
 
-    // For now, use current BTC price as approximation
-    // In production, you'd want to fetch historical price at the exact start time
+    const extractedName = upOrDownMatch[1];
+    
+    // Map common full names to symbols, otherwise use as-is
+    const nameToSymbol: Record<string, string> = {
+      'Bitcoin': 'BTC',
+      'Ethereum': 'ETH',
+      'Ripple': 'XRP',
+      'Solana': 'SOL',
+      'Cardano': 'ADA',
+      'Dogecoin': 'DOGE',
+      'Polkadot': 'DOT',
+      'Litecoin': 'LTC',
+      'Chainlink': 'LINK',
+      'Polygon': 'MATIC'
+    };
+    
+    const cryptoSymbol = nameToSymbol[extractedName] || extractedName.toUpperCase();
+
+    // Fetch current price as starting threshold
     try {
-      const currentPrice = await CryptoPriceService.getPrice('BTC');
+      const currentPrice = await CryptoPriceService.getPrice(cryptoSymbol);
+      logger.info(`Fetched threshold for ${cryptoSymbol} (from "${title}"): ${currentPrice}`);
       return currentPrice || 0;
     } catch (error) {
-      logger.error('Error fetching BTC price for threshold:', error);
+      logger.error(`Error fetching ${cryptoSymbol} price for threshold:`, error);
       return 0;
     }
   }

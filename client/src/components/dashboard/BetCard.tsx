@@ -31,18 +31,38 @@ export function BetCard({ bet, liveData, onRefresh, isRefreshing, index = 0 }: B
     const fetchLiveData = async () => {
       if (bet.dataSource !== 'Polymarket') return;
 
-      const title = bet.market.toLowerCase();
+      const title = bet.market;
 
-      // Fetch Bitcoin price
-      if (title.includes('bitcoin') || title.includes('btc')) {
+      // Extract crypto symbol from title (works for any crypto)
+      // Pattern: "[Crypto Name] Up or Down" or "[Symbol] Up or Down"
+      const upOrDownMatch = title.match(/^([A-Za-z0-9]+)\s+Up\s+or\s+Down/i);
+      if (upOrDownMatch) {
+        const extractedName = upOrDownMatch[1];
+        
+        // Map common full names to symbols, otherwise use as-is
+        const nameToSymbol: Record<string, string> = {
+          'Bitcoin': 'BTC',
+          'Ethereum': 'ETH',
+          'Ripple': 'XRP',
+          'Solana': 'SOL',
+          'Cardano': 'ADA',
+          'Dogecoin': 'DOGE',
+          'Polkadot': 'DOT',
+          'Litecoin': 'LTC',
+          'Chainlink': 'LINK',
+          'Polygon': 'MATIC'
+        };
+        
+        const cryptoSymbol = nameToSymbol[extractedName] || extractedName.toUpperCase();
+        
         try {
-          const response = await fetch('/api/crypto/price/BTC');
+          const response = await fetch(`/api/crypto/price/${cryptoSymbol}`);
           const data = await response.json();
           if (data.success && data.data) {
             setCryptoPrice(data.data.price);
           }
         } catch (error) {
-          console.error('Failed to fetch BTC price:', error);
+          console.error(`Failed to fetch ${cryptoSymbol} price:`, error);
         }
       }
 
@@ -178,11 +198,11 @@ export function BetCard({ bet, liveData, onRefresh, isRefreshing, index = 0 }: B
           <div className="mb-6 relative group">
             {bet.dataSource === 'Polymarket' ? (
               <>
-                {/* Show Live Bitcoin Price */}
+                {/* Show Live Crypto Price */}
                 {cryptoPrice && (
                   <div className="mb-4 p-3 bg-gradient-to-r from-orange-500/10 to-yellow-500/10 border border-orange-500/20 rounded-lg">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wider">Live Bitcoin Price</span>
+                      <span className="text-xs font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wider">Live Price</span>
                       <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">
                         ${formatNumber(cryptoPrice)}
                       </span>
@@ -236,7 +256,7 @@ export function BetCard({ bet, liveData, onRefresh, isRefreshing, index = 0 }: B
                   </div>
                 </div>
                 
-                {/* Show Starting Price vs Current Price for Bitcoin Up/Down bets */}
+                {/* Show Starting Price vs Current Price for Crypto Up/Down bets */}
                 {cryptoPrice && bet.market.toLowerCase().includes('up or down') && (
                   <div className="mt-4 p-3 bg-secondary/30 rounded-lg border border-border/50">
                     <div className="grid grid-cols-2 gap-4 mb-3">
