@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { cache } from '../../config/redis';
+import { cacheService } from '../../config/redis';
 import logger from '../../utils/logger';
 
 const GAMMA_API_BASE = 'https://gamma-api.polymarket.com';
@@ -58,10 +58,10 @@ export class PolymarketService {
   static async searchMarkets(query: string): Promise<PolymarketMarket[]> {
     try {
       const cacheKey = `polymarket:search:${query}`;
-      const cached = await cache.get(cacheKey);
+      const cached = await cacheService.get<PolymarketMarket[]>(cacheKey);
       
       if (cached) {
-        return JSON.parse(cached);
+        return cached;
       }
 
       const response = await axios.get(`${GAMMA_API_BASE}/markets`, {
@@ -73,7 +73,7 @@ export class PolymarketService {
       });
 
       const markets = response.data || [];
-      await cache.set(cacheKey, JSON.stringify(markets), this.CACHE_TTL);
+      await cacheService.set(cacheKey, markets, this.CACHE_TTL);
       
       return markets;
     } catch (error) {
@@ -88,10 +88,10 @@ export class PolymarketService {
   static async getMarketById(conditionId: string): Promise<MarketDetails | null> {
     try {
       const cacheKey = `polymarket:market:${conditionId}`;
-      const cached = await cache.get(cacheKey);
+      const cached = await cacheService.get<MarketDetails>(cacheKey);
       
       if (cached) {
-        return JSON.parse(cached);
+        return cached;
       }
 
       const response = await axios.get(`${GAMMA_API_BASE}/markets/${conditionId}`);
@@ -113,7 +113,7 @@ export class PolymarketService {
         noPrice: prices.no
       };
 
-      await cache.set(cacheKey, JSON.stringify(marketDetails), this.CACHE_TTL);
+      await cacheService.set(cacheKey, marketDetails, this.CACHE_TTL);
       
       return marketDetails;
     } catch (error) {
