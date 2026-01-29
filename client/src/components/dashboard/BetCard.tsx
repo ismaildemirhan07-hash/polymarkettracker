@@ -26,7 +26,7 @@ export function BetCard({ bet, liveData, onRefresh, isRefreshing, index = 0 }: B
   const isWinning = bet.status === 'winning';
   const isLosing = bet.status === 'losing';
 
-  // Fetch live data based on bet type
+  // Fetch live data based on bet type and refresh periodically
   useEffect(() => {
     const fetchLiveData = async () => {
       if (bet.dataSource !== 'Polymarket') return;
@@ -104,9 +104,9 @@ export function BetCard({ bet, liveData, onRefresh, isRefreshing, index = 0 }: B
     };
 
     fetchLiveData();
-    const interval = setInterval(fetchLiveData, 30000); // Update every 30s
-    return () => clearInterval(interval);
-  }, [bet.market, bet.dataSource]);
+    const intervalId = setInterval(fetchLiveData, 30000);
+    return () => clearInterval(intervalId);
+  }, [bet.dataSource, bet.market]);
 
   // Calculate progress relative to threshold
   useEffect(() => {
@@ -198,18 +198,6 @@ export function BetCard({ bet, liveData, onRefresh, isRefreshing, index = 0 }: B
           <div className="mb-6 relative group">
             {bet.dataSource === 'Polymarket' ? (
               <>
-                {/* Show Live Crypto Price */}
-                {cryptoPrice && (
-                  <div className="mb-4 p-3 bg-gradient-to-r from-orange-500/10 to-yellow-500/10 border border-orange-500/20 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wider">Live Price</span>
-                      <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                        ${formatNumber(cryptoPrice)}
-                      </span>
-                    </div>
-                  </div>
-                )}
-
                 {/* Show Live Weather Temperature */}
                 {weatherTemp && (
                   <div className="mb-4 p-3 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/20 rounded-lg">
@@ -259,17 +247,17 @@ export function BetCard({ bet, liveData, onRefresh, isRefreshing, index = 0 }: B
                 {/* Show Starting Price vs Current Price for Crypto Up/Down bets */}
                 {cryptoPrice && bet.market.toLowerCase().includes('up or down') && (
                   <div className="mt-4 p-3 bg-secondary/30 rounded-lg border border-border/50">
-                    <div className="grid grid-cols-2 gap-4 mb-3">
+                    <div className="grid grid-cols-3 gap-3 mb-3">
                       <div>
                         <span className="text-xs text-muted-foreground uppercase font-bold">Starting Price</span>
-                        <div className="text-2xl font-bold text-foreground/70">
-                          ${formatNumber(bet.threshold && bet.threshold > 0 ? bet.threshold : cryptoPrice)}
+                        <div className="text-xl font-bold text-foreground/70">
+                          {bet.threshold && bet.threshold > 0 ? `$${formatNumber(bet.threshold)}` : '—'}
                         </div>
                       </div>
                       <div>
                         <span className="text-xs text-muted-foreground uppercase font-bold">Current Price</span>
                         <div className={cn(
-                          "text-2xl font-bold",
+                          "text-xl font-bold",
                           bet.threshold && bet.threshold > 0 
                             ? (cryptoPrice > bet.threshold ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400")
                             : "text-blue-600 dark:text-blue-400"
@@ -277,7 +265,41 @@ export function BetCard({ bet, liveData, onRefresh, isRefreshing, index = 0 }: B
                           ${formatNumber(cryptoPrice)}
                         </div>
                       </div>
+                      <div>
+                        <span className="text-xs text-muted-foreground uppercase font-bold">Target: {bet.outcome}</span>
+                        <div className="text-xl font-bold text-purple-600 dark:text-purple-400">
+                          {(() => {
+                            if (!bet.threshold || bet.threshold === 0) return '—';
+                            const targetPrice = bet.outcome === 'Yes' 
+                              ? bet.threshold * 1.01  // Up = 1% higher
+                              : bet.threshold * 0.99; // Down = 1% lower
+                            return `$${formatNumber(targetPrice)}`;
+                          })()}
+                        </div>
+                      </div>
                     </div>
+                    
+                    {/* Time Remaining Display */}
+                    {bet.resolveDate && (
+                      <div className="mb-3 text-center">
+                        <span className="text-xs text-muted-foreground uppercase font-bold">Time Remaining: </span>
+                        <span className="text-sm font-bold text-foreground">
+                          {(() => {
+                            const now = new Date();
+                            const end = new Date(bet.resolveDate);
+                            const diff = end.getTime() - now.getTime();
+                            if (diff <= 0) return 'Expired';
+                            const hours = Math.floor(diff / (1000 * 60 * 60));
+                            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                            if (hours > 24) {
+                              const days = Math.floor(hours / 24);
+                              return `${days}d ${hours % 24}h`;
+                            }
+                            return `${hours}h ${minutes}m`;
+                          })()}
+                        </span>
+                      </div>
+                    )}
                     
                     {/* Progress bar for Up/Down */}
                     {bet.threshold && bet.threshold > 0 && (
