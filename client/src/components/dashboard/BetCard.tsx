@@ -237,20 +237,22 @@ export function BetCard({ bet, liveData, onRefresh, isRefreshing, index = 0 }: B
                 </div>
                 
                 {/* Show Starting Price vs Current Price for Bitcoin Up/Down bets */}
-                {bet.threshold > 0 && cryptoPrice && (
+                {cryptoPrice && bet.market.toLowerCase().includes('up or down') && (
                   <div className="mt-4 p-3 bg-secondary/30 rounded-lg border border-border/50">
                     <div className="grid grid-cols-2 gap-4 mb-3">
                       <div>
                         <span className="text-xs text-muted-foreground uppercase font-bold">Starting Price</span>
                         <div className="text-2xl font-bold text-foreground/70">
-                          ${formatNumber(bet.threshold)}
+                          ${formatNumber(bet.threshold && bet.threshold > 0 ? bet.threshold : cryptoPrice)}
                         </div>
                       </div>
                       <div>
                         <span className="text-xs text-muted-foreground uppercase font-bold">Current Price</span>
                         <div className={cn(
                           "text-2xl font-bold",
-                          cryptoPrice > bet.threshold ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+                          bet.threshold && bet.threshold > 0 
+                            ? (cryptoPrice > bet.threshold ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400")
+                            : "text-blue-600 dark:text-blue-400"
                         )}>
                           ${formatNumber(cryptoPrice)}
                         </div>
@@ -258,39 +260,46 @@ export function BetCard({ bet, liveData, onRefresh, isRefreshing, index = 0 }: B
                     </div>
                     
                     {/* Progress bar for Up/Down */}
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-xs items-center">
-                        <span className="text-muted-foreground font-medium">Movement</span>
-                        <span className={cn(
-                          "font-bold",
-                          cryptoPrice > bet.threshold ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
-                        )}>
-                          {cryptoPrice > bet.threshold ? '↑' : '↓'} ${Math.abs(cryptoPrice - bet.threshold).toFixed(0)} ({((Math.abs(cryptoPrice - bet.threshold) / bet.threshold) * 100).toFixed(2)}%)
-                        </span>
-                      </div>
-                      <div className="relative h-3 w-full bg-secondary rounded-full overflow-hidden border border-border/50">
-                        <div className="absolute inset-0 flex justify-between px-2">
-                          <div className="w-px h-full bg-border" />
-                          <div className="w-px h-full bg-border" />
-                          <div className="w-px h-full bg-border" />
+                    {bet.threshold && bet.threshold > 0 && (
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-xs items-center">
+                          <span className="text-muted-foreground font-medium">Movement</span>
+                          <span className={cn(
+                            "font-bold",
+                            cryptoPrice > bet.threshold ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+                          )}>
+                            {cryptoPrice > bet.threshold ? '↑' : '↓'} ${Math.abs(cryptoPrice - bet.threshold).toFixed(0)} ({((Math.abs(cryptoPrice - bet.threshold) / bet.threshold) * 100).toFixed(2)}%)
+                          </span>
                         </div>
-                        <div 
-                          className={cn(
-                            "absolute top-0 bottom-0 left-0 transition-all duration-1000 ease-out",
-                            cryptoPrice > bet.threshold ? "bg-emerald-500" : "bg-rose-500"
-                          )}
-                          style={{ 
-                            width: `${Math.min(Math.max(((cryptoPrice - bet.threshold) / (bet.threshold * 0.1) * 50) + 50, 0), 100)}%`
-                          }}
-                        />
-                        <div className="absolute top-0 bottom-0 w-0.5 bg-foreground/30 left-1/2 z-10"></div>
+                        <div className="relative h-3 w-full bg-secondary rounded-full overflow-hidden border border-border/50">
+                          <div className="absolute inset-0 flex justify-between px-2">
+                            <div className="w-px h-full bg-border" />
+                            <div className="w-px h-full bg-border" />
+                            <div className="w-px h-full bg-border" />
+                          </div>
+                          <div 
+                            className={cn(
+                              "absolute top-0 bottom-0 left-0 transition-all duration-1000 ease-out",
+                              cryptoPrice > bet.threshold ? "bg-emerald-500" : "bg-rose-500"
+                            )}
+                            style={{ 
+                              width: `${Math.min(Math.max(((cryptoPrice - bet.threshold) / (bet.threshold * 0.1) * 50) + 50, 0), 100)}%`
+                            }}
+                          />
+                          <div className="absolute top-0 bottom-0 w-0.5 bg-foreground/30 left-1/2 z-10"></div>
+                        </div>
+                        <div className="flex justify-between text-[10px] text-muted-foreground font-medium px-1">
+                          <span>Down</span>
+                          <span className="text-foreground/70 font-bold">Start</span>
+                          <span>Up</span>
+                        </div>
                       </div>
-                      <div className="flex justify-between text-[10px] text-muted-foreground font-medium px-1">
-                        <span>Down</span>
-                        <span className="text-foreground/70 font-bold">Start</span>
-                        <span>Up</span>
+                    )}
+                    {(!bet.threshold || bet.threshold === 0) && (
+                      <div className="text-xs text-center text-yellow-600 dark:text-yellow-400 mt-2">
+                        Click Sync to capture starting price
                       </div>
-                    </div>
+                    )}
                   </div>
                 )}
 
