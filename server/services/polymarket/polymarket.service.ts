@@ -174,19 +174,49 @@ export class PolymarketService {
    * Get market details from URL
    */
   static async getMarketFromUrl(url: string): Promise<MarketDetails | null> {
-    const marketId = this.extractMarketIdFromUrl(url);
+    const slug = this.extractMarketIdFromUrl(url);
     
-    if (!marketId) {
+    if (!slug) {
       throw new Error('Invalid Polymarket URL');
     }
 
-    // Try to find market by searching
-    const markets = await this.searchMarkets(marketId);
-    
-    if (markets.length > 0) {
-      return await this.getMarketById(markets[0].id);
-    }
+    try {
+      // Try to get event by slug
+      const response = await axios.get(`${GAMMA_API_BASE}/events`, {
+        params: {
+          slug: slug,
+          limit: 1
+        }
+      });
 
-    return null;
+      const events = response.data;
+      if (!events || events.length === 0) {
+        return null;
+      }
+
+      const event = events[0];
+      
+      // Get the first market from the event
+      if (event.markets && event.markets.length > 0) {
+        const market = event.markets[0];
+        
+        // Get live prices
+        const prices = await this.getMarketPrices(market.tokens || []);
+
+        return {
+          marketId: market.condition_id || market.id,
+          question: market.question,
+          endDate: market.end_date_iso || event.end_date_iso,
+          outcomes: market.outcomes || ['Yes', 'No'],
+          yesPrice: prices.yes,
+          noPrice: prices.no
+        };
+      }
+
+      return null;
+    } catch (error) {
+      logger.error('Error fetching market from URL:', error);
+      return null;
+    }
   }
 }
