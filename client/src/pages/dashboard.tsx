@@ -1,8 +1,9 @@
 import { Header } from "@/components/layout/Header";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { BetCard } from "@/components/dashboard/BetCard";
+import { AddBetDialog } from "@/components/dashboard/AddBetDialog";
 import { useRealTimeData } from "@/lib/mockData";
-import { DollarSign, Activity, PieChart, Trophy, RefreshCw } from "lucide-react";
+import { DollarSign, Activity, PieChart, Trophy, RefreshCw, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
@@ -11,6 +12,7 @@ import { cn } from "@/lib/utils";
 export default function Dashboard() {
   const { bets, liveValues, refreshData, isRefreshing } = useRealTimeData();
   const [activeFilter, setActiveFilter] = useState<string>("All");
+  const [showAddBetDialog, setShowAddBetDialog] = useState(false);
 
   // Calculate totals
   const totalInvested = bets.reduce((acc, bet) => acc + bet.amount, 0);
@@ -166,6 +168,22 @@ export default function Dashboard() {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* Floating Add Bet Button */}
+      <button
+        onClick={() => setShowAddBetDialog(true)}
+        className="fixed bottom-8 right-8 size-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all hover:scale-110 flex items-center justify-center z-50"
+        aria-label="Add new bet"
+      >
+        <Plus className="size-6" />
+      </button>
+
+      {/* Add Bet Dialog */}
+      <AddBetDialog
+        open={showAddBetDialog}
+        onOpenChange={setShowAddBetDialog}
+        onBetAdded={refreshData}
+      />
     </div>
   );
 }
