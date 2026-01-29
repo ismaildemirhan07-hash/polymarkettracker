@@ -26,23 +26,31 @@ model Bet {
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   market        String
-  type          String
+  type          String?
   position      String
   
   amount        Float
   shares        Int
   entryOdds     Float
+  currentValue  Float?
+  pnl           Float?
   
-  asset         String
-  threshold     Float
-  thresholdUnit String
+  asset         String?
+  threshold     Float?
+  thresholdUnit String?
   
   resolveDate   DateTime
   resolved      Boolean  @default(false)
   outcome       String?
+  status        String   @default("ACTIVE")
   
   category      String
-  dataSource    String
+  dataSource    String?
+  
+  // Polymarket-specific fields
+  polymarketConditionId String?  @unique
+  polymarketSlug        String?
+  polymarketEventSlug   String?
   
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -51,6 +59,7 @@ model Bet {
   @@index([type])
   @@index([resolved])
   @@index([asset])
+  @@index([polymarketConditionId])
 }
 
 model PriceHistory {
