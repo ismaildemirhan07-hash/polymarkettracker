@@ -2,18 +2,17 @@ import { Header } from "@/components/layout/Header";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { BetCard } from "@/components/dashboard/BetCard";
 import { WalletConnectDialog } from "@/components/dashboard/WalletConnectDialog";
-import { useRealTimeData } from "@/lib/mockData";
-import { DollarSign, Activity, PieChart, Trophy, RefreshCw, Wallet } from "lucide-react";
+import { useWallet } from "@/hooks/useWallet";
+import { DollarSign, Activity, PieChart, Trophy, RefreshCw, Wallet, Edit2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 export default function Dashboard() {
-  const { bets, liveValues, refreshData, isRefreshing } = useRealTimeData();
+  const { walletAddress, bets, isLoading, connectWallet, disconnectWallet, refreshBets } = useWallet();
   const [activeFilter, setActiveFilter] = useState<string>("All");
   const [showWalletDialog, setShowWalletDialog] = useState(false);
-  const [walletAddress, setWalletAddress] = useState<string | null>(null); // TODO: Get from user profile
 
   // Calculate totals
   const totalInvested = bets.reduce((acc, bet) => acc + bet.amount, 0);
@@ -45,29 +44,43 @@ export default function Dashboard() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-             {walletAddress && (
-               <span className="text-xs text-muted-foreground hidden md:inline-block">
-                 Auto-refreshing in 55s
-               </span>
+             {walletAddress ? (
+               <>
+                 <div className="hidden md:flex items-center gap-2 px-3 py-2 bg-secondary rounded-lg">
+                   <Wallet className="size-4 text-primary" />
+                   <span className="text-xs font-mono text-foreground">
+                     {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+                   </span>
+                 </div>
+                 <Button 
+                   onClick={() => setShowWalletDialog(true)} 
+                   variant="ghost"
+                   size="sm"
+                   className="gap-2"
+                 >
+                   <Edit2 className="size-4" />
+                   <span className="hidden md:inline">Change</span>
+                 </Button>
+                 <Button 
+                   onClick={refreshBets} 
+                   variant="outline"
+                   size="sm"
+                   className="gap-2"
+                   disabled={isLoading}
+                 >
+                   <RefreshCw className={`size-4 ${isLoading ? 'animate-spin' : ''}`} />
+                   <span className="hidden md:inline">{isLoading ? 'Syncing...' : 'Refresh'}</span>
+                 </Button>
+               </>
+             ) : (
+               <Button 
+                 onClick={() => setShowWalletDialog(true)} 
+                 className="gap-2"
+               >
+                 <Wallet className="size-4" />
+                 Connect Account
+               </Button>
              )}
-             <Button 
-               onClick={() => walletAddress ? refreshData() : setShowWalletDialog(true)} 
-               variant={walletAddress ? "outline" : "default"}
-               className="gap-2"
-               disabled={isRefreshing}
-             >
-               {walletAddress ? (
-                 <>
-                   <RefreshCw className={`size-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                   {isRefreshing ? 'Syncing...' : 'Sync Now'}
-                 </>
-               ) : (
-                 <>
-                   <Wallet className="size-4" />
-                   Connect Account
-                 </>
-               )}
-             </Button>
           </div>
         </div>
 
@@ -159,9 +172,9 @@ export default function Dashboard() {
                 <BetCard 
                   key={bet.id} 
                   bet={bet} 
-                  liveData={liveValues[bet.id]} 
-                  onRefresh={refreshData}
-                  isRefreshing={isRefreshing}
+                  liveData={null} 
+                  onRefresh={refreshBets}
+                  isRefreshing={isLoading}
                   index={index}
                 />
               ))}
@@ -185,9 +198,9 @@ export default function Dashboard() {
       <WalletConnectDialog
         open={showWalletDialog}
         onOpenChange={setShowWalletDialog}
-        onWalletConnected={(address) => {
-          setWalletAddress(address);
-          refreshData();
+        onWalletConnected={async (address) => {
+          await connectWallet(address);
+          setShowWalletDialog(false);
         }}
       />
     </div>
