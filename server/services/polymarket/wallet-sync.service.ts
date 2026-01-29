@@ -230,9 +230,9 @@ export class WalletSyncService {
     const resolveDate = new Date(endDate);
     
     if (resolveDate > now) {
-      return 'ACTIVE';
+      return 'active';
     } else {
-      return 'PENDING_RESOLUTION';
+      return 'expired';
     }
   }
 

@@ -5,6 +5,7 @@ export interface Bet {
   market: string;
   type?: string;
   position: 'YES' | 'NO';
+  outcome: string;
   amount: number;
   shares: number;
   entryOdds: number;

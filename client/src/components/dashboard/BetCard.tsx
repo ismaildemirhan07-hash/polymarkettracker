@@ -222,25 +222,12 @@ export function BetCard({ bet, liveData, onRefresh, isRefreshing, index = 0 }: B
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Current Odds</span>
-                    <div className="flex items-baseline gap-2">
-                      <span className={cn(
-                        "text-3xl font-bold tracking-tight",
-                        isWinning ? "text-emerald-600 dark:text-emerald-400" : isLosing ? "text-rose-600 dark:text-rose-400" : "text-foreground"
-                      )}>
-                        {bet.currentValue ? `${(bet.currentValue * 100).toFixed(1)}%` : '...'}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entry Odds</span>
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-3xl font-bold tracking-tight text-foreground/70">
-                        {(bet.entryOdds * 100).toFixed(1)}%
-                      </span>
-                    </div>
+                <div className="space-y-1">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entry Odds</span>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl font-bold tracking-tight text-foreground">
+                      {(bet.entryOdds * 100).toFixed(1)}%
+                    </span>
                   </div>
                 </div>
                 

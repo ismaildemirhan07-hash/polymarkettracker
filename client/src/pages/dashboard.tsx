@@ -14,16 +14,25 @@ export default function Dashboard() {
   const [activeFilter, setActiveFilter] = useState<string>("All");
   const [showWalletDialog, setShowWalletDialog] = useState(false);
 
-  // Calculate totals
-  const totalInvested = bets.reduce((acc, bet) => acc + bet.amount, 0);
-  const totalPnL = bets.reduce((acc, bet) => acc + bet.pnl, 0);
-  const activePositions = bets.length;
+  // Separate active and expired bets
+  const activeBets = bets.filter(bet => bet.status !== 'expired');
+  const expiredBets = bets.filter(bet => bet.status === 'expired');
+
+  // Calculate totals (only from active bets)
+  const totalInvested = activeBets.reduce((acc, bet) => acc + bet.amount, 0);
+  const totalPnL = activeBets.reduce((acc, bet) => acc + (bet.pnl || 0), 0);
+  const activePositions = activeBets.length;
   const winRate = 65; 
 
-  // Filter bets
-  const filteredBets = activeFilter === "All" 
-    ? bets 
-    : bets.filter(bet => bet.category === activeFilter);
+  // Filter active bets by category
+  const filteredActiveBets = activeFilter === "All" 
+    ? activeBets 
+    : activeBets.filter(bet => bet.category === activeFilter);
+  
+  // Filter expired bets by category
+  const filteredExpiredBets = activeFilter === "All" 
+    ? expiredBets 
+    : expiredBets.filter(bet => bet.category === activeFilter);
 
   const categories = ["All", "Crypto", "Weather", "Sports", "Stocks"];
 
@@ -168,7 +177,7 @@ export default function Dashboard() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {filteredBets.map((bet, index) => (
+              {filteredActiveBets.map((bet, index) => (
                 <BetCard 
                   key={bet.id} 
                   bet={bet} 
@@ -178,7 +187,7 @@ export default function Dashboard() {
                   index={index}
                 />
               ))}
-              {filteredBets.length === 0 && (
+              {filteredActiveBets.length === 0 && (
                 <div className="col-span-full py-12 text-center text-muted-foreground border border-dashed border-border rounded-lg">
                   No active positions found for {activeFilter}
                 </div>
@@ -186,9 +195,41 @@ export default function Dashboard() {
             </div>
           </TabsContent>
           
-          <TabsContent value="history">
-            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground border border-dashed border-border rounded-xl bg-card">
-              <p>No closed bets in history.</p>
+          <TabsContent value="history" className="space-y-6">
+            {/* Category Filters */}
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setActiveFilter(cat)}
+                  className={cn(
+                    "px-3 py-1.5 text-xs font-medium rounded-full transition-all border",
+                    activeFilter === cat
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
+                  )}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {filteredExpiredBets.map((bet, index) => (
+                <BetCard 
+                  key={bet.id} 
+                  bet={bet} 
+                  liveData={null} 
+                  onRefresh={refreshBets}
+                  isRefreshing={isLoading}
+                  index={index}
+                />
+              ))}
+              {filteredExpiredBets.length === 0 && (
+                <div className="col-span-full py-12 text-center text-muted-foreground border border-dashed border-border rounded-lg">
+                  No expired bets in history for {activeFilter}
+                </div>
+              )}
             </div>
           </TabsContent>
         </Tabs>
