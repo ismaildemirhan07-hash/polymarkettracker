@@ -2,6 +2,7 @@ import axios from 'axios';
 import { prisma } from '../../config/database';
 import { cacheService } from '../../config/redis';
 import logger from '../../utils/logger';
+import { CryptoPriceService } from '../crypto/crypto-price.service';
 
 const DATA_API_BASE = 'https://data-api.polymarket.com';
 
@@ -34,6 +35,54 @@ interface PolymarketPosition {
 }
 
 export class WalletSyncService {
+  /**
+   * Extract start time from Bitcoin Up/Down bet title
+   * Example: "Bitcoin Up or Down - January 29, 5:15PM-5:30PM ET" -> Date for 5:15PM on Jan 29
+   */
+  private static parseStartTimeFromTitle(title: string): Date | null {
+    try {
+      // Match pattern like "January 29, 5:15PM-5:30PM ET"
+      const match = title.match(/([A-Za-z]+)\s+(\d{1,2}),?\s+(\d{1,2}):(\d{2})(AM|PM)/i);
+      if (!match) return null;
+
+      const [, month, day, hour, minute, ampm] = match;
+      const year = new Date().getFullYear();
+      
+      // Convert month name to number
+      const monthNum = new Date(Date.parse(month + " 1, 2000")).getMonth();
+      
+      // Convert to 24-hour format
+      let hour24 = parseInt(hour);
+      if (ampm.toUpperCase() === 'PM' && hour24 !== 12) hour24 += 12;
+      if (ampm.toUpperCase() === 'AM' && hour24 === 12) hour24 = 0;
+      
+      const date = new Date(year, monthNum, parseInt(day), hour24, parseInt(minute));
+      return date;
+    } catch (error) {
+      logger.error('Error parsing start time from title:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get threshold (starting price) for Bitcoin Up/Down bets
+   */
+  private static async getThresholdForBet(title: string): Promise<number> {
+    // Check if it's a Bitcoin Up/Down bet
+    if (!title.toLowerCase().includes('bitcoin') || !title.toLowerCase().includes('up or down')) {
+      return 0; // Not a time-based Bitcoin bet
+    }
+
+    // For now, use current BTC price as approximation
+    // In production, you'd want to fetch historical price at the exact start time
+    try {
+      const currentPrice = await CryptoPriceService.getPrice('BTC');
+      return currentPrice || 0;
+    } catch (error) {
+      logger.error('Error fetching BTC price for threshold:', error);
+      return 0;
+    }
+  }
   private static CACHE_TTL = 300; // 5 minutes
 
   /**
@@ -103,6 +152,9 @@ export class WalletSyncService {
           });
         } else {
           // Create new bet
+          // Get threshold for Bitcoin Up/Down bets
+          const threshold = await this.getThresholdForBet(position.title);
+          
           await prisma.bet.create({
             data: {
               userId,
@@ -117,8 +169,8 @@ export class WalletSyncService {
               resolveDate: new Date(position.endDate),
               status: this.determineStatus(position.endDate),
               category: 'Polymarket',
-              threshold: 0, // Polymarket doesn't have numeric thresholds
-              thresholdUnit: 'outcome',
+              threshold: threshold, // Starting BTC price for Up/Down bets
+              thresholdUnit: threshold > 0 ? 'USD' : 'outcome',
               dataSource: 'Polymarket',
               asset: position.title,
               polymarketConditionId: position.conditionId,
