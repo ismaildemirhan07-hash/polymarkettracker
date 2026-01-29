@@ -272,7 +272,7 @@ export function BetCard({ bet, liveData, onRefresh, isRefreshing, index = 0 }: B
                   <div className="h-3 w-px bg-border" />
                   {liveData?.change24h && (
                     <div className={cn(
-                      "flex items-center gap-1 text-xs font-medium",
+                      "flex items-center gap-1 font-semibold text-xs",
                       liveData.change24h > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
                     )}>
                       {liveData.change24h > 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
