@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 export interface Bet {
   id: string;
   market: string;
+  type?: string;
   position: 'YES' | 'NO';
   amount: number;
   shares: number;
@@ -12,6 +13,8 @@ export interface Bet {
   resolveDate: string;
   category: string;
   status: string;
+  threshold?: number;
+  dataSource?: string;
 }
 
 export const useWallet = () => {

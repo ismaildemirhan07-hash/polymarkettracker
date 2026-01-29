@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { weatherService } from '../services/weather/weather.service';
+import { WeatherService } from '../services/weather/weather-price.service';
 import { asyncHandler, AppError } from '../middleware/errorHandler';
 import { weatherQuerySchema, forecastQuerySchema } from '../utils/validators';
 import logger from '../utils/logger';
@@ -55,6 +56,31 @@ router.get(
       success: true,
       data: cities,
       count: cities.length,
+      timestamp: new Date().toISOString(),
+    });
+  })
+);
+
+// Simple temperature endpoint for live data
+router.get(
+  '/temperature/:city',
+  asyncHandler(async (req: Request, res: Response) => {
+    const { city } = req.params;
+    
+    logger.info(`Fetching temperature for: ${city}`);
+    const temperature = await WeatherService.getTemperatureByCity(city);
+    
+    if (temperature === null) {
+      throw new AppError(404, `Could not fetch temperature for city: ${city}`);
+    }
+    
+    res.json({
+      success: true,
+      data: {
+        city,
+        temperature,
+        unit: 'F'
+      },
       timestamp: new Date().toISOString(),
     });
   })

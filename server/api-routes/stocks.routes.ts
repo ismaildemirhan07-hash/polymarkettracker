@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { stocksService } from '../services/stocks/stocks.service';
+import { StockPriceService } from '../services/stocks/stock-price.service';
 import { asyncHandler, AppError } from '../middleware/errorHandler';
 import { stockQuerySchema, singleSymbolSchema, historyQuerySchema } from '../utils/validators';
 import logger from '../utils/logger';
@@ -88,5 +89,29 @@ function getMarketStatusMessage(status: string): string {
       return 'Market status unknown';
   }
 }
+
+// Simple stock price endpoint for live data
+router.get(
+  '/price/:symbol',
+  asyncHandler(async (req: Request, res: Response) => {
+    const { symbol } = req.params;
+    
+    logger.info(`Fetching stock price for: ${symbol}`);
+    const price = await StockPriceService.getPrice(symbol);
+    
+    if (price === null) {
+      throw new AppError(404, `Could not fetch price for symbol: ${symbol}`);
+    }
+    
+    res.json({
+      success: true,
+      data: {
+        symbol: symbol.toUpperCase(),
+        price
+      },
+      timestamp: new Date().toISOString(),
+    });
+  })
+);
 
 export default router;

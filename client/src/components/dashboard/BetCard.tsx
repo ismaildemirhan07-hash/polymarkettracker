@@ -19,9 +19,74 @@ interface BetCardProps {
 export function BetCard({ bet, liveData, onRefresh, isRefreshing, index = 0 }: BetCardProps) {
   const [percentToTarget, setPercentToTarget] = useState(0);
   const [distanceInfo, setDistanceInfo] = useState({ label: '', color: '' });
+  const [cryptoPrice, setCryptoPrice] = useState<number | null>(null);
+  const [weatherTemp, setWeatherTemp] = useState<number | null>(null);
+  const [stockPrice, setStockPrice] = useState<number | null>(null);
 
   const isWinning = bet.status === 'winning';
   const isLosing = bet.status === 'losing';
+
+  // Fetch live data based on bet type
+  useEffect(() => {
+    const fetchLiveData = async () => {
+      if (bet.dataSource !== 'Polymarket') return;
+
+      const title = bet.market.toLowerCase();
+
+      // Fetch Bitcoin price
+      if (title.includes('bitcoin') || title.includes('btc')) {
+        try {
+          const response = await fetch('/api/crypto/price/BTC');
+          const data = await response.json();
+          if (data.success && data.data) {
+            setCryptoPrice(data.data.price);
+          }
+        } catch (error) {
+          console.error('Failed to fetch BTC price:', error);
+        }
+      }
+
+      // Fetch weather temperature
+      if (title.includes('temperature') || title.includes('weather')) {
+        const cities = ['new york', 'nyc', 'chicago', 'miami', 'los angeles'];
+        const city = cities.find(c => title.includes(c));
+        if (city) {
+          try {
+            const response = await fetch(`/api/weather/temperature/${city}`);
+            const data = await response.json();
+            if (data.success && data.data) {
+              setWeatherTemp(data.data.temperature);
+            }
+          } catch (error) {
+            console.error('Failed to fetch temperature:', error);
+          }
+        }
+      }
+
+      // Fetch stock price
+      const stockSymbols = ['nvda', 'nvidia', 'aapl', 'apple', 'tsla', 'tesla', 'msft', 'microsoft'];
+      const stock = stockSymbols.find(s => title.includes(s));
+      if (stock) {
+        const symbol = stock.includes('nvidia') ? 'NVDA' : 
+                      stock.includes('apple') ? 'AAPL' : 
+                      stock.includes('tesla') ? 'TSLA' : 
+                      stock.includes('microsoft') ? 'MSFT' : stock.toUpperCase();
+        try {
+          const response = await fetch(`/api/stocks/price/${symbol}`);
+          const data = await response.json();
+          if (data.success && data.data) {
+            setStockPrice(data.data.price);
+          }
+        } catch (error) {
+          console.error('Failed to fetch stock price:', error);
+        }
+      }
+    };
+
+    fetchLiveData();
+    const interval = setInterval(fetchLiveData, 30000); // Update every 30s
+    return () => clearInterval(interval);
+  }, [bet.market, bet.dataSource]);
 
   // Calculate progress relative to threshold
   useEffect(() => {
@@ -109,73 +174,150 @@ export function BetCard({ bet, liveData, onRefresh, isRefreshing, index = 0 }: B
         </CardHeader>
         
         <CardContent>
-          {/* Main Live Data Display */}
+          {/* Main Live Data Display - Polymarket Format */}
           <div className="mb-6 relative group">
-            <div className="flex items-baseline gap-3">
-              <span className={cn(
-                "text-4xl font-bold tracking-tight transition-all duration-300",
-                 // Cleaner colors, removed text-glow
-                 isWinning ? "text-emerald-600 dark:text-emerald-400" : isLosing ? "text-rose-600 dark:text-rose-400" : "text-foreground"
-              )}>
-                {liveData?.value !== undefined 
-                  ? bet.type === 'crypto' || bet.type === 'stocks' ? `$${formatNumber(liveData.value)}` : liveData.value.toFixed(1) 
-                  : "..."}
-              </span>
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Current</span>
-            </div>
-            
-            <div className="flex items-center gap-4 mt-2 text-sm bg-secondary/50 p-2 rounded-lg w-fit">
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground text-xs uppercase font-bold">Target</span>
-                <span className="font-semibold text-foreground">
-                  {bet.type === 'crypto' || bet.type === 'stocks' ? `$${formatNumber(bet.threshold)}` : bet.threshold}
+            {bet.dataSource === 'Polymarket' ? (
+              <>
+                {/* Show Live Bitcoin Price */}
+                {cryptoPrice && (
+                  <div className="mb-4 p-3 bg-gradient-to-r from-orange-500/10 to-yellow-500/10 border border-orange-500/20 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wider">Live Bitcoin Price</span>
+                      <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                        ${formatNumber(cryptoPrice)}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Show Live Weather Temperature */}
+                {weatherTemp && (
+                  <div className="mb-4 p-3 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/20 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">Live Temperature</span>
+                      <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                        {weatherTemp.toFixed(1)}°F
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Show Live Stock Price */}
+                {stockPrice && (
+                  <div className="mb-4 p-3 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider">Live Stock Price</span>
+                      <span className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                        ${formatNumber(stockPrice)}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Current Odds</span>
+                    <div className="flex items-baseline gap-2">
+                      <span className={cn(
+                        "text-3xl font-bold tracking-tight",
+                        isWinning ? "text-emerald-600 dark:text-emerald-400" : isLosing ? "text-rose-600 dark:text-rose-400" : "text-foreground"
+                      )}>
+                        {bet.currentValue ? `${(bet.currentValue * 100).toFixed(1)}%` : '...'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entry Odds</span>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-3xl font-bold tracking-tight text-foreground/70">
+                        {(bet.entryOdds * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-4 mt-3 text-sm bg-secondary/50 p-2 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground text-xs uppercase font-bold">Shares</span>
+                    <span className="font-semibold text-foreground">{bet.shares.toFixed(2)}</span>
+                  </div>
+                  <div className="h-3 w-px bg-border" />
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground text-xs uppercase font-bold">Invested</span>
+                    <span className="font-semibold text-foreground">{formatCurrency(bet.amount)}</span>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-baseline gap-3">
+                  <span className={cn(
+                    "text-4xl font-bold tracking-tight transition-all duration-300",
+                    isWinning ? "text-emerald-600 dark:text-emerald-400" : isLosing ? "text-rose-600 dark:text-rose-400" : "text-foreground"
+                  )}>
+                    {liveData?.value !== undefined 
+                      ? bet.type === 'crypto' || bet.type === 'stocks' ? `$${formatNumber(liveData.value)}` : liveData.value.toFixed(1) 
+                      : "..."}
+                  </span>
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Current</span>
+                </div>
+                
+                <div className="flex items-center gap-4 mt-2 text-sm bg-secondary/50 p-2 rounded-lg w-fit">
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground text-xs uppercase font-bold">Target</span>
+                    <span className="font-semibold text-foreground">
+                      {bet.type === 'crypto' || bet.type === 'stocks' ? `$${formatNumber(bet.threshold)}` : bet.threshold}
+                    </span>
+                  </div>
+                  <div className="h-3 w-px bg-border" />
+                  {liveData?.change24h && (
+                    <div className={cn(
+                      "flex items-center gap-1 text-xs font-medium",
+                      liveData.change24h > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+                    )}>
+                      {liveData.change24h > 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                      {Math.abs(liveData.change24h).toFixed(2)}% (24h)
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Progress Bar - Only for non-Polymarket bets */}
+          {bet.dataSource !== 'Polymarket' && (
+            <div className="mb-6 space-y-2">
+              <div className="flex justify-between text-xs items-center">
+                <span className="text-muted-foreground font-medium">Proximity</span>
+                <span className={cn("font-bold", distanceInfo.color)}>
+                  {distanceInfo.label}
                 </span>
               </div>
-              <div className="h-3 w-px bg-border" />
-              {liveData?.change24h && (
-                <div className={cn(
-                  "flex items-center gap-1 text-xs font-medium",
-                  liveData.change24h > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
-                )}>
-                  {liveData.change24h > 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                  {Math.abs(liveData.change24h).toFixed(2)}% (24h)
+              <div className="relative h-3 w-full bg-secondary rounded-full overflow-hidden border border-border/50">
+                {/* Background markers */}
+                <div className="absolute inset-0 flex justify-between px-2">
+                     <div className="w-px h-full bg-border" />
+                     <div className="w-px h-full bg-border" />
+                     <div className="w-px h-full bg-border" />
                 </div>
-              )}
-            </div>
-          </div>
 
-          {/* Progress Bar */}
-          <div className="mb-6 space-y-2">
-            <div className="flex justify-between text-xs items-center">
-              <span className="text-muted-foreground font-medium">Proximity</span>
-              <span className={cn("font-bold", distanceInfo.color)}>
-                {distanceInfo.label}
-              </span>
-            </div>
-            <div className="relative h-3 w-full bg-secondary rounded-full overflow-hidden border border-border/50">
-              {/* Background markers */}
-              <div className="absolute inset-0 flex justify-between px-2">
-                   <div className="w-px h-full bg-border" />
-                   <div className="w-px h-full bg-border" />
-                   <div className="w-px h-full bg-border" />
+                <div 
+                  className={cn(
+                      "absolute top-0 bottom-0 left-0 transition-all duration-1000 ease-out",
+                      isWinning ? "bg-emerald-500" : "bg-rose-500"
+                  )}
+                  style={{ width: `${percentToTarget}%` }}
+                />
+                {/* Threshold Marker */}
+                <div className="absolute top-0 bottom-0 w-0.5 bg-foreground/30 left-1/2 z-10"></div>
               </div>
-
-              <div 
-                className={cn(
-                    "absolute top-0 bottom-0 left-0 transition-all duration-1000 ease-out",
-                    isWinning ? "bg-emerald-500" : "bg-rose-500"
-                )}
-                style={{ width: `${percentToTarget}%` }}
-              />
-              {/* Threshold Marker */}
-              <div className="absolute top-0 bottom-0 w-0.5 bg-foreground/30 left-1/2 z-10"></div>
+              <div className="flex justify-between text-[10px] text-muted-foreground font-medium px-1">
+                 <span>Low</span>
+                 <span className="text-foreground/70 font-bold">Target</span>
+                 <span>High</span>
+              </div>
             </div>
-            <div className="flex justify-between text-[10px] text-muted-foreground font-medium px-1">
-               <span>Low</span>
-               <span className="text-foreground/70 font-bold">Target</span>
-               <span>High</span>
-            </div>
-          </div>
+          )}
 
           {/* Footer Stats */}
           <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">

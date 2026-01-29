@@ -79,6 +79,9 @@ export class WalletSyncService {
       let syncedCount = 0;
 
       for (const position of positions) {
+        // Log position data for debugging
+        logger.info(`Processing position: ${position.title}, curPrice: ${position.curPrice}, avgPrice: ${position.avgPrice}, cashPnl: ${position.cashPnl}`);
+        
         // Check if bet already exists
         const existingBet = await prisma.bet.findFirst({
           where: {
@@ -92,8 +95,8 @@ export class WalletSyncService {
           await prisma.bet.update({
             where: { id: existingBet.id },
             data: {
-              currentValue: position.curPrice,
-              pnl: position.cashPnl,
+              currentValue: position.curPrice || position.avgPrice, // Fallback to avgPrice if curPrice is missing
+              pnl: position.cashPnl || 0,
               status: this.determineStatus(position.endDate),
               updatedAt: new Date()
             }
@@ -104,15 +107,20 @@ export class WalletSyncService {
             data: {
               userId,
               market: position.title,
+              type: 'crypto', // Default type for Polymarket
               position: position.outcome.toUpperCase(),
-              amount: position.initialValue,
-              shares: position.size,
-              entryOdds: position.avgPrice,
-              currentValue: position.curPrice,
-              pnl: position.cashPnl,
+              amount: position.initialValue || 0,
+              shares: position.size || 0,
+              entryOdds: position.avgPrice || 0,
+              currentValue: position.curPrice || position.avgPrice || 0, // Fallback chain
+              pnl: position.cashPnl || 0,
               resolveDate: new Date(position.endDate),
               status: this.determineStatus(position.endDate),
               category: 'Polymarket',
+              threshold: 0, // Polymarket doesn't have numeric thresholds
+              thresholdUnit: 'outcome',
+              dataSource: 'Polymarket',
+              asset: position.title,
               polymarketConditionId: position.conditionId,
               polymarketSlug: position.slug,
               polymarketEventSlug: position.eventSlug
