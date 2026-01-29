@@ -140,15 +140,26 @@ export class WalletSyncService {
         });
 
         if (existingBet) {
-          // Update existing bet
+          // Update existing bet - also update threshold if it's 0 (for Bitcoin Up/Down bets)
+          const updateData: any = {
+            currentValue: position.curPrice || position.avgPrice,
+            pnl: position.cashPnl || 0,
+            status: this.determineStatus(position.endDate),
+            updatedAt: new Date()
+          };
+          
+          // If threshold is 0 and it's a Bitcoin Up/Down bet, set it now
+          if (existingBet.threshold === 0) {
+            const threshold = await this.getThresholdForBet(position.title);
+            if (threshold > 0) {
+              updateData.threshold = threshold;
+              updateData.thresholdUnit = 'USD';
+            }
+          }
+          
           await prisma.bet.update({
             where: { id: existingBet.id },
-            data: {
-              currentValue: position.curPrice || position.avgPrice, // Fallback to avgPrice if curPrice is missing
-              pnl: position.cashPnl || 0,
-              status: this.determineStatus(position.endDate),
-              updatedAt: new Date()
-            }
+            data: updateData
           });
         } else {
           // Create new bet
