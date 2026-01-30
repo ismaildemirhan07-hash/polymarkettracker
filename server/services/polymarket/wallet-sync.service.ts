@@ -68,38 +68,46 @@ export class WalletSyncService {
    * Get threshold (starting price) for Crypto Up/Down bets
    */
   private static async getThresholdForBet(title: string): Promise<number> {
-    // Extract crypto symbol from title (works for any crypto)
-    // Pattern: "[Crypto Name] Up or Down" or "[Symbol] Up or Down"
-    const upOrDownMatch = title.match(/^([A-Za-z0-9]+)\s+Up\s+or\s+Down/i);
-    if (!upOrDownMatch) {
-      return 0; // Not an Up/Down bet
-    }
-
-    const extractedName = upOrDownMatch[1];
-    
-    // Map common full names to symbols, otherwise use as-is
-    const nameToSymbol: Record<string, string> = {
-      'Bitcoin': 'BTC',
-      'Ethereum': 'ETH',
-      'Ripple': 'XRP',
-      'Solana': 'SOL',
-      'Cardano': 'ADA',
-      'Dogecoin': 'DOGE',
-      'Polkadot': 'DOT',
-      'Litecoin': 'LTC',
-      'Chainlink': 'LINK',
-      'Polygon': 'MATIC'
-    };
-    
-    const cryptoSymbol = nameToSymbol[extractedName] || extractedName.toUpperCase();
-
-    // Fetch current price as starting threshold
     try {
+      // Extract crypto symbol from title (works for any crypto)
+      // Pattern: "[Crypto Name] Up or Down" or "[Symbol] Up or Down"
+      const upOrDownMatch = title.match(/^([A-Za-z0-9]+)\s+Up\s+or\s+Down/i);
+      if (!upOrDownMatch) {
+        logger.debug(`Not an Up/Down bet: "${title}"`);
+        return 0; // Not an Up/Down bet
+      }
+
+      const extractedName = upOrDownMatch[1];
+      
+      // Map common full names to symbols, otherwise use as-is
+      const nameToSymbol: Record<string, string> = {
+        'Bitcoin': 'BTC',
+        'Ethereum': 'ETH',
+        'Ripple': 'XRP',
+        'Solana': 'SOL',
+        'Cardano': 'ADA',
+        'Dogecoin': 'DOGE',
+        'Polkadot': 'DOT',
+        'Litecoin': 'LTC',
+        'Chainlink': 'LINK',
+        'Polygon': 'MATIC'
+      };
+      
+      const cryptoSymbol = nameToSymbol[extractedName] || extractedName.toUpperCase();
+      logger.info(`Attempting to fetch threshold for ${cryptoSymbol} (from "${title}")`);
+
+      // Fetch current price as starting threshold
       const currentPrice = await CryptoPriceService.getPrice(cryptoSymbol);
-      logger.info(`Fetched threshold for ${cryptoSymbol} (from "${title}"): ${currentPrice}`);
-      return currentPrice || 0;
+      
+      if (currentPrice && currentPrice > 0) {
+        logger.info(`✓ Successfully fetched threshold for ${cryptoSymbol}: $${currentPrice}`);
+        return currentPrice;
+      } else {
+        logger.warn(`✗ Received null/zero price for ${cryptoSymbol}`);
+        return 0;
+      }
     } catch (error) {
-      logger.error(`Error fetching ${cryptoSymbol} price for threshold:`, error);
+      logger.error(`✗ Error in getThresholdForBet for "${title}":`, error);
       return 0;
     }
   }
@@ -168,13 +176,16 @@ export class WalletSyncService {
             updatedAt: new Date()
           };
           
-          // If threshold is 0/null and it's a Bitcoin Up/Down bet, set it now
-          if (!existingBet.threshold || existingBet.threshold === 0) {
+          // If threshold is 0/null and it's an Up/Down bet, try to set it now
+          if ((!existingBet.threshold || existingBet.threshold === 0) && position.title.toLowerCase().includes('up or down')) {
+            logger.info(`Attempting to set missing threshold for: ${position.title}`);
             const threshold = await this.getThresholdForBet(position.title);
             if (threshold > 0) {
               updateData.threshold = threshold;
               updateData.thresholdUnit = 'USD';
-              logger.info(`Setting threshold for existing bet: ${position.title} = ${threshold}`);
+              logger.info(`✓ Successfully set threshold for existing bet: ${position.title} = $${threshold}`);
+            } else {
+              logger.warn(`✗ Failed to fetch threshold for existing bet: ${position.title}`);
             }
           }
           

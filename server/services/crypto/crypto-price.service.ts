@@ -31,7 +31,21 @@ export class CryptoPriceService {
         'ETHEREUM': 'ETHUSDT',
         'ETH': 'ETHUSDT',
         'SOL': 'SOLUSDT',
-        'SOLANA': 'SOLUSDT'
+        'SOLANA': 'SOLUSDT',
+        'XRP': 'XRPUSDT',
+        'RIPPLE': 'XRPUSDT',
+        'ADA': 'ADAUSDT',
+        'CARDANO': 'ADAUSDT',
+        'DOGE': 'DOGEUSDT',
+        'DOGECOIN': 'DOGEUSDT',
+        'DOT': 'DOTUSDT',
+        'POLKADOT': 'DOTUSDT',
+        'MATIC': 'MATICUSDT',
+        'POLYGON': 'MATICUSDT',
+        'LINK': 'LINKUSDT',
+        'CHAINLINK': 'LINKUSDT',
+        'LTC': 'LTCUSDT',
+        'LITECOIN': 'LTCUSDT'
       };
 
       const tradingPair = symbolMap[symbol.toUpperCase()] || `${symbol.toUpperCase()}USDT`;

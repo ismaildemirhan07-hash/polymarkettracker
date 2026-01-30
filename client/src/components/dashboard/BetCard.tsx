@@ -225,7 +225,7 @@ export function BetCard({ bet, liveData, onRefresh, isRefreshing, index = 0 }: B
                 <div className="space-y-1">
                   <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entry Odds</span>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-bold tracking-tight text-foreground">
+                    <span className="text-2xl font-bold tracking-tight text-foreground">
                       {(bet.entryOdds * 100).toFixed(1)}%
                     </span>
                   </div>

@@ -14,9 +14,10 @@ export default function Dashboard() {
   const [activeFilter, setActiveFilter] = useState<string>("All");
   const [showWalletDialog, setShowWalletDialog] = useState(false);
 
-  // Separate active and expired bets
-  const activeBets = bets.filter(bet => bet.status !== 'expired');
-  const expiredBets = bets.filter(bet => bet.status === 'expired');
+  // Separate active and expired bets based on resolveDate (real-time check)
+  const now = new Date();
+  const activeBets = bets.filter(bet => new Date(bet.resolveDate) > now);
+  const expiredBets = bets.filter(bet => new Date(bet.resolveDate) <= now);
 
   // Calculate totals (only from active bets)
   const totalInvested = activeBets.reduce((acc, bet) => acc + bet.amount, 0);
